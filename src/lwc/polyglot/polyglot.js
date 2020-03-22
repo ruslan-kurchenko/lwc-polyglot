@@ -1,26 +1,38 @@
 import getCustomLabel from '@salesforce/apex/Polyglot.getCustomLabel';
 
+class CustomLabels {
+  $success = true;
+  $messages = {};
+}
+
+/**
+ * Provides the list of methods to resolve internalization information
+ * using dynamic names of entries
+ */
 class Polyglot {
 
-  getCustomLabels(labelNames) {
+  /**
+   * Resolves Custom Labels values by names.
+   *
+   * @param names {String[]}
+   * @returns {Promise<CustomLabels>}
+   */
+  getCustomLabels(names) {
 
     return new Promise((resolve, reject) => {
-      const labels = {
-        '$success': true,
-        '$invalid': {}
-      };
+      const labels = new CustomLabels();
 
-      const deferred = labelNames
-        .map(labelName => {
-          return getCustomLabel({ name: labelName })
-            .then(labelValue => {
-              labels[labelName] = labelValue;
+      const deferred = names
+        .map(name => {
+          return getCustomLabel({ name })
+            .then(value => {
+              labels[name] = value;
             })
             .catch(e => {
               labels.$success = false;
-              labels.$invalid[labelName] = e.body.message;
+              labels.$messages[name] = e.body.message;
 
-              labels[labelName] = labelName;
+              labels[name] = name;
             });
         });
 
@@ -34,8 +46,14 @@ class Polyglot {
     });
   }
 
-  getCustomLabel(labelName) {
-    return this.getCustomLabels([labelName]);
+  /**
+   * Resolves Custom Label value by name.
+   *
+   * @param name {String}
+   * @returns {Promise<CustomLabels>}
+   */
+  getCustomLabel(name) {
+    return this.getCustomLabels([name]);
   }
 
 }

@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
   <types>
-    <name>ApexClass</name>
     <members>Polyglot</members>
+    <name>ApexClass</name>
   </types>
   <types>
-    <name>LightningComponentBundle</name>
     <members>examples</members>
     <members>polyglot</members>
+    <name>LightningComponentBundle</name>
   </types>
   <types>
-    <name>ApexPage</name>
     <members>Polyglot</members>
+    <name>ApexPage</name>
   </types>
   <version>48.0</version>
 </Package>

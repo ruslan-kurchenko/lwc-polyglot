@@ -1,4 +1,4 @@
 <apex:page controller="Polyglot" contentType="application/json; charset=utf-8"
            showHeader="false" standardStylesheets="false" sidebar="false">
-    <apex:dynamicComponent componentValue="{!labelsPlaceholder}" />
+    <apex:dynamicComponent componentValue="{!page.component}" />
 </apex:page>

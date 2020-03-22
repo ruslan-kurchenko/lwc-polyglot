@@ -1,40 +1,118 @@
 public with sharing class Polyglot {
+    private static final String PAGE_TYPE = 'type';
 
-    private static final String POLYGLOT_PAGE = '/apex/Polyglot';
+    private final PageFactory pageFactory = new PageFactory();
 
-    public Component.Apex.OutputText labelsPlaceholder { get; private set; }
+    public PolyglotPage page { get; private set; }
 
     public Polyglot() {
-        this.labelsPlaceholder = new Component.Apex.OutputText();
-        labelsPlaceholder.expressions.value = getLabelsPlaceholder();
+        this.page = this.pageFactory.newInstance();
     }
 
-    @AuraEnabled
-    public static Map<String, Object> getCustomLabels(List<String> names) {
-        PageReference page = new PageReference(POLYGLOT_PAGE + '?labels=' + String.join(names, ','));
+    class PageFactory {
+        public PolyglotPage newInstance() {
+            PolyglotPage instance;
 
-        String labelsJSON = page.getContent().toString();
-        Map<String, Object> labels = (Map<String, Object>) JSON.deserializeUntyped(labelsJSON);
+            Map<String, String> params = ApexPages.currentPage().getParameters();
+            String type = params.get(PAGE_TYPE);
 
-        return labels;
+            if (type == 'CustomLabelsPage') {
+                instance = new CustomLabelsPage(params);
+            }
+
+            return instance;
+        }
     }
 
-    @AuraEnabled
+
+    @AuraEnabled(Cacheable = true)
     public static Object getCustomLabel(String name) {
         return getCustomLabels(new List<String>{ name }).get(name);
     }
 
-    private static String getLabelsPlaceholder() {
-        Map<String, String> params = ApexPages.currentPage().getParameters();
-        String labelsByComma = params.get('labels');
+    @AuraEnabled(Cacheable = true)
+    public static Map<String, Object> getCustomLabels(List<String> names) {
+        return new CustomLabelsPage(names).getContent();
+    }
 
-        List<String> labelsMapping = new List<String>();
-        for (String label : labelsByComma.split(',')) {
-            labelsMapping.add('"' + label + '":' + '"{!$Label.' + label + '}"');
+
+    private virtual class PolyglotPage {
+        private final String ref = '/apex/Polyglot';
+        private final Map<String, String> params = new Map<String, String>();
+
+        public Component.Apex.OutputText component { get; private set; }
+
+        public void addParameter(String name, String value) {
+            this.params.put(name, value);
         }
 
-        String labelsPlaceholder = '{' + String.join(labelsMapping, ',') + '}';
+        public void addParameters(Map<String, String> params) {
+            this.params.putAll(params);
+        }
 
-        return labelsPlaceholder;
+        public String getParameter(String name) {
+            return this.params.get(name);
+        }
+
+        public Blob getBlobContent() {
+            this.addParameter(PAGE_TYPE, String.valueOf(this).substringBefore( ':' ));
+
+            List<String> entries = new List<String>();
+            for (String name : this.params.keySet()) {
+                entries.add(name + '=' + this.params.get(name));
+            }
+
+            return new PageReference(ref + '?' + String.escapeSingleQuotes(String.join(entries, '&'))).getContent();
+        }
+    }
+
+
+    private class CustomLabelsPage extends PolyglotPage {
+        private final String PARAMETER = 'custom_labels';
+        private final String SEPARATOR = ',';
+
+        public CustomLabelsPage(List<String> names) {
+            this.addParameter(PARAMETER, String.join(names, SEPARATOR));
+        }
+
+        public CustomLabelsPage(Map<String, String> params) {
+            this.addParameters(params);
+            this.component = createComponent();
+        }
+
+        private Component.Apex.OutputText createComponent() {
+            Component.Apex.OutputText outputText = new Component.Apex.OutputText();
+
+            List<String> names = this.getParameter(PARAMETER).split(SEPARATOR);
+
+            List<CustomLabelTemplate> templates = new List<CustomLabelTemplate>();
+            for (String name : names) {
+                templates.add(new CustomLabelTemplate(name));
+            }
+
+            outputText.expressions.value = this.mergeTemplates(templates);
+
+            return outputText;
+        }
+
+        private String mergeTemplates(List<CustomLabelTemplate> templates) {
+            return templates.toString().replace('(', '{').replace(')', '}');
+        }
+
+        public Map<String, Object> getContent() {
+            return (Map<String, Object>) JSON.deserializeUntyped(super.getBlobContent().toString());
+        }
+    }
+
+    private class CustomLabelTemplate {
+        public String name;
+
+        public CustomLabelTemplate(String name) {
+            this.name = name;
+        }
+
+        public override String toString() {
+            return '"' + this.name + '":' + '"{!$Label.' + this.name + '}"';
+        }
     }
 }
