@@ -22,9 +22,10 @@ class Polyglot {
     return new Promise((resolve, reject) => {
       const labels = new CustomLabels();
 
-      const deferred = names
-        .map(name => {
-          return getCustomLabel({ name })
+      let numOfResolvedLabels = 0;
+      names.forEach(name => {
+        setTimeout(() => {
+          getCustomLabel({ name })
             .then(value => {
               labels[name] = value;
             })
@@ -33,16 +34,16 @@ class Polyglot {
               labels.$messages[name] = e.body.message;
 
               labels[name] = name;
-            });
-        });
+            })
+            .finally(() => {
+              numOfResolvedLabels++;
 
-      Promise.all(deferred)
-        .then(() => {
-          resolve(labels);
-        })
-        .catch(e => {
-          reject(e)
-        });
+              if (numOfResolvedLabels === names.length) {
+                resolve(labels);
+              }
+            });
+        }, 0);
+      });
     });
   }
 
