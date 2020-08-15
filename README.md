@@ -1,5 +1,7 @@
 # Polyglot
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/2ab1efe399f34f45936a98cda366c2c2)](https://app.codacy.com/manual/ruslan-kurchenko/lwc-polyglot?utm_source=github.com&utm_medium=referral&utm_content=ruslan-kurchenko/lwc-polyglot&utm_campaign=Badge_Grade_Dashboard)
+
 Salesforce Lightning Web Component to facilitate multilingual applications development 
 
 ## Features
