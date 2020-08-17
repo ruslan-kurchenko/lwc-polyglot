@@ -1,6 +1,0 @@
----
-plugins:
-  pmd:
-    enabled: true
-    config:
-      file: apex-ruleset.xml
