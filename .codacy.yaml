@@ -1,4 +1,6 @@
 ---
-engines:
+plugins:
   pmd:
-    exclude_paths:
+    enabled: true
+    config:
+      file: apex-ruleset.xml
