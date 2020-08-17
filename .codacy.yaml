@@ -1,0 +1,4 @@
+---
+engines:
+  pmd:
+    exclude_paths:
