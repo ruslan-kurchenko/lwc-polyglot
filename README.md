@@ -28,20 +28,18 @@ export default class Examples extends LightningElement {
 
     polyglot
       .getCustomLabels([validLabel, invalidLabel])
-      .then(labels => {
+      .then(result => {
           /*
-            labels: CustomLabels
-              $success: false
-              $messages: {
+            result: CustomLabels
+              success: false
+              messages: {
                 InvalidName: "Field $Label.InvalidName does not exist. Check spelling"
+              },
+              labels: {
+                InvalidName: "InvalidName",
+                Greetings: "Hello!"
               }
-              
-              InvalidName: "InvalidName"
-              Greetings: "Hello!"
           */
-
-          // labels.Greetings = "Hello!"
-          // labels.InvalidName = "InvalidName"
       });
   }
 }
@@ -49,9 +47,9 @@ export default class Examples extends LightningElement {
 
 Custom Labels Resolve Result
 
-- `$success` - `true/false` meta information to indicate if one of labels is invalid
-- `$messages` - meta information to get key/value storage of messages related to invalid labels
-- `<custom_label_name>` - a value of custom label stored by its name
+- `success` - `true/false` meta information to indicate if one of labels is invalid
+- `messages` - meta information to get key/value storage of messages related to invalid labels
+- `labels` - a custom label values stored in object by their names
 
 
 ## License
