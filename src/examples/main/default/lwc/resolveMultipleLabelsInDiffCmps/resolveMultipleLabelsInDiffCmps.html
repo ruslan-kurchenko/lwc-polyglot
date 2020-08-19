@@ -1,0 +1,8 @@
+<template>
+    <h3>Resolve multiple labels in different components:</h3>
+    <pre>
+        <template for:each={names} for:item="name">
+            <c-label-by-name name={name} key={name}></c-label-by-name>
+        </template>
+    </pre>
+</template>
