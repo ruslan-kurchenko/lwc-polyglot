@@ -24,15 +24,61 @@ public with sharing class Polyglot {
         }
     }
 
-
     @AuraEnabled(Cacheable = true)
-    public static Object getCustomLabel(String name) {
-        return getCustomLabels(new List<String>{ name }).get(name);
+    public static CustomLabelsResult getCustomLabels(List<String> names) {
+        CustomLabelsResult result;
+
+        try {
+            result = resolveCustomLabels(names);
+        } catch (Exception ex) {
+            result = new CustomLabelsResult();
+
+            result.success = false;
+            for (String name : names) {
+                result.messages.put(name, ex.getMessage());
+                result.labels.put(name, name);
+            }
+        }
+
+        return result;
     }
 
-    @AuraEnabled(Cacheable = true)
-    public static Map<String, Object> getCustomLabels(List<String> names) {
-        return new CustomLabelsPage(names).getContent();
+    private static CustomLabelsResult resolveCustomLabels(List<String> names) {
+        CustomLabelsResult result = new CustomLabelsResult();
+
+        if (!names.isEmpty()) {
+            resolveCustomLabels(new Set<String>(names), result);
+        }
+
+        return result;
+    }
+
+    private static CustomLabelsResult resolveCustomLabels(Set<String> names, CustomLabelsResult result) {
+        try {
+            result.labels.putAll(
+                    new CustomLabelsPage(names).getContent()
+            );
+        } catch (VisualforceException ex) {
+            String invalidLabelName = ex.getMessage().substringBetween('Field $Label.', ' does not exist');
+
+            result.success = false;
+            result.messages.put(invalidLabelName, ex.getMessage());
+            result.labels.put(invalidLabelName, invalidLabelName);
+
+            names.remove(invalidLabelName);
+
+            if (result.messages.size() == 100) {
+                Integer numbOfAllCustomLabels = result.messages.size() + names.size();
+                for (String name : names) {
+                    result.messages.put(name, 'The system reached the limit of 100 tries to resolve ' + numbOfAllCustomLabels + ' custom labels. The custom label $Label.' + name + ' is not resolved. Please, contact your System Administrator.');
+                    result.labels.put(name, name);
+                }
+            } else if (names.size() > 0) {
+                resolveCustomLabels(names, result);
+            }
+        }
+
+        return result;
     }
 
 
@@ -59,10 +105,10 @@ public with sharing class Polyglot {
 
             List<String> entries = new List<String>();
             for (String name : this.params.keySet()) {
-                entries.add(name + '=' + this.params.get(name));
+                entries.add(name + '=' + this.params.get(name).replaceAll('#', '%23').escapeHtml4());
             }
 
-            return new PageReference(ref + '?' + String.escapeSingleQuotes(String.join(entries, '&'))).getContent();
+            return new PageReference(ref + '?' + String.join(entries, '&')).getContent();
         }
     }
 
@@ -71,8 +117,8 @@ public with sharing class Polyglot {
         private final String PARAMETER = 'custom_labels';
         private final String SEPARATOR = ',';
 
-        public CustomLabelsPage(List<String> names) {
-            this.addParameter(PARAMETER, String.join(names, SEPARATOR));
+        public CustomLabelsPage(Set<String> names) {
+            this.addParameter(PARAMETER, String.join(new List<String>(names), SEPARATOR));
         }
 
         public CustomLabelsPage(Map<String, String> params) {
@@ -83,7 +129,7 @@ public with sharing class Polyglot {
         private Component.Apex.OutputText createComponent() {
             Component.Apex.OutputText outputText = new Component.Apex.OutputText();
 
-            List<String> names = this.getParameter(PARAMETER).split(SEPARATOR);
+            List<String> names = this.getParameter(PARAMETER).unescapeHtml4().split(SEPARATOR);
 
             List<CustomLabelTemplate> templates = new List<CustomLabelTemplate>();
             for (String name : names) {
@@ -96,11 +142,19 @@ public with sharing class Polyglot {
         }
 
         private String mergeTemplates(List<CustomLabelTemplate> templates) {
-            return templates.toString().replace('(', '{').replace(')', '}');
+            List<String> expressions = new List<String>();
+
+            for (CustomLabelTemplate template : templates) {
+                expressions.add(template.toString());
+            }
+
+            return '{' + String.join(expressions, SEPARATOR) + '}';
         }
 
-        public Map<String, Object> getContent() {
-            return (Map<String, Object>) JSON.deserializeUntyped(super.getBlobContent().toString());
+        public Map<String, String> getContent() {
+            String content = super.getBlobContent().toString();
+
+            return (Map<String, String>) JSON.deserialize(content, Map<String, String>.class);
         }
     }
 
@@ -113,6 +167,21 @@ public with sharing class Polyglot {
 
         public override String toString() {
             return '"' + this.name + '":' + '"{!$Label.' + this.name + '}"';
+        }
+    }
+
+    public class CustomLabelsResult {
+        @AuraEnabled
+        public Boolean success { get; set; }
+        @AuraEnabled
+        public Map<String, String> messages { get; set; }
+        @AuraEnabled
+        public Map<String, Object> labels { get; set; }
+
+        public CustomLabelsResult() {
+            this.success = true;
+            this.messages = new Map<String, String>();
+            this.labels = new Map<String, String>();
         }
     }
 }
