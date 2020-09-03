@@ -1,3 +1,27 @@
+/**
+ * @license
+ * MIT License
+ * Copyright (c) 2020 Ruslan Kurchenko
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 public with sharing class Polyglot {
     private static final String PAGE_TYPE = 'type';
 
@@ -24,7 +48,7 @@ public with sharing class Polyglot {
         }
     }
 
-    @AuraEnabled(Cacheable = true)
+    @AuraEnabled(Cacheable=true)
     public static CustomLabelsResult getCustomLabels(List<String> names) {
         CustomLabelsResult result;
 
@@ -53,13 +77,15 @@ public with sharing class Polyglot {
         return result;
     }
 
-    private static CustomLabelsResult resolveCustomLabels(Set<String> names, CustomLabelsResult result) {
+    private static CustomLabelsResult resolveCustomLabels(
+        Set<String> names,
+        CustomLabelsResult result
+    ) {
         try {
-            result.labels.putAll(
-                    new CustomLabelsPage(names).getContent()
-            );
+            result.labels.putAll(new CustomLabelsPage(names).getContent());
         } catch (VisualforceException ex) {
-            String invalidLabelName = ex.getMessage().substringBetween('Field $Label.', ' does not exist');
+            String invalidLabelName = ex.getMessage()
+                .substringBetween('Field $Label.', ' does not exist');
 
             result.success = false;
             result.messages.put(invalidLabelName, ex.getMessage());
@@ -70,7 +96,14 @@ public with sharing class Polyglot {
             if (result.messages.size() == 100) {
                 Integer numbOfAllCustomLabels = result.messages.size() + names.size();
                 for (String name : names) {
-                    result.messages.put(name, 'The system reached the limit of 100 tries to resolve ' + numbOfAllCustomLabels + ' custom labels. The custom label $Label.' + name + ' is not resolved. Please, contact your System Administrator.');
+                    result.messages.put(
+                        name,
+                        'The system reached the limit of 100 tries to resolve ' +
+                        numbOfAllCustomLabels +
+                        ' custom labels. The custom label $Label.' +
+                        name +
+                        ' is not resolved. Please, contact your System Administrator.'
+                    );
                     result.labels.put(name, name);
                 }
             } else if (names.size() > 0) {
@@ -80,7 +113,6 @@ public with sharing class Polyglot {
 
         return result;
     }
-
 
     private virtual class PolyglotPage {
         private final String ref = '/apex/Polyglot';
@@ -101,17 +133,20 @@ public with sharing class Polyglot {
         }
 
         public Blob getBlobContent() {
-            this.addParameter(PAGE_TYPE, String.valueOf(this).substringBefore( ':' ));
+            this.addParameter(PAGE_TYPE, String.valueOf(this).substringBefore(':'));
 
             List<String> entries = new List<String>();
             for (String name : this.params.keySet()) {
-                entries.add(name + '=' + this.params.get(name).replaceAll('#', '%23').escapeHtml4());
+                entries.add(
+                    name +
+                    '=' +
+                    this.params.get(name).replaceAll('#', '%23').escapeHtml4()
+                );
             }
 
             return new PageReference(ref + '?' + String.join(entries, '&')).getContent();
         }
     }
-
 
     private class CustomLabelsPage extends PolyglotPage {
         private final String PARAMETER = 'custom_labels';
