@@ -1,19 +1,19 @@
-import { LightningElement, api } from "lwc";
+import { LightningElement, api } from 'lwc';
 import { Polyglot } from 'c/polyglot';
 
 const polyglot = new Polyglot();
 
 export default class LabelByName extends LightningElement {
-  @api
-  name;
-  labels;
+    @api
+    name;
+    labels;
 
-  connectedCallback() {
-    this.init()
-  }
+    connectedCallback() {
+        this.init();
+    }
 
-  async init() {
-    const labels = await polyglot.getCustomLabels([this.name]);
-    this.labels = JSON.stringify(labels, undefined, 4);
-  }
+    async init() {
+        const labels = await polyglot.getCustomLabels([this.name]);
+        this.labels = JSON.stringify(labels, undefined, 4);
+    }
 }

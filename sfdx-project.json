@@ -1,14 +1,14 @@
 {
-  "packageDirectories": [
-    {
-      "path": "src/polyglot",
-      "default": true
-    },
-    {
-      "path": "src/examples"
-    }
-  ],
-  "namespace": "",
-  "sfdcLoginUrl": "https://login.salesforce.com",
-  "sourceApiVersion": "49.0"
+    "packageDirectories": [
+        {
+            "path": "src/polyglot",
+            "default": true
+        },
+        {
+            "path": "src/examples"
+        }
+    ],
+    "namespace": "",
+    "sfdcLoginUrl": "https://login.salesforce.com",
+    "sourceApiVersion": "49.0"
 }

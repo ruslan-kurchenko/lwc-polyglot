@@ -4,14 +4,14 @@ import { Polyglot } from 'c/polyglot';
 const polyglot = new Polyglot();
 
 export default class ResolveOneLabel extends LightningElement {
-  labels;
+    labels;
 
-  connectedCallback() {
-    this.init()
-  }
+    connectedCallback() {
+        this.init();
+    }
 
-  async init() {
-    const labels = await polyglot.getCustomLabels(['Greetings']);
-    this.labels = JSON.stringify(labels, undefined, 4);
-  }
+    async init() {
+        const labels = await polyglot.getCustomLabels(['Greetings']);
+        this.labels = JSON.stringify(labels, undefined, 4);
+    }
 }
